@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BENTAM BUTCHERY</title>
+<title>BENTAM BUTCHERY DELIVERIES</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
 <style>
@@ -37,7 +37,7 @@ header {
 
 header h1 {
     margin: 0;
-    font-size: 24px;
+    font-size: 48px;
     flex: 1;
 }
 
@@ -360,7 +360,7 @@ footer a {
     }
     
     header h1 {
-        font-size: 22px;
+        font-size: 32px;
     }
     
     .products {
@@ -485,7 +485,7 @@ body.dark-mode .modal-content strong {
 
 <header>
 <div>
-    <h1>🥩 BENTAM BUTCHERY</h1>
+    <h1>🥩 <strong>BENTAM BUTCHERY DELIVERIES</strong></h1>
     <p>Fresh & Affordable Meat in Embu</p>
     <div style="margin-top: 10px;">
         <span id="statusBadge" class="status-badge status-open">🟢 Open Now</span>
@@ -500,9 +500,10 @@ body.dark-mode .modal-content strong {
 </div>
 
 <!-- Banner Images -->
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; padding: 15px; max-width: 1200px; margin: 0 auto;">
-<img src="display.jpeg" alt="Display" style="width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
-<img src="wantam satisfaction.jpeg" alt="Customer Satisfaction" style="width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; padding: 15px; max-width: 1200px; margin: 0 auto;">
+<img src="display.jpeg" alt="Display" style="width: 100%; height: 250px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+<img src="wholesale.jpeg" alt="Wholesale" style="width: 100%; height: 250px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+<img src="wantam satisfaction.jpeg" alt="Customer Satisfaction" style="width: 100%; height: 250px; object-fit: cover; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
 </div>
 
 <!-- QR Code Modal -->
@@ -548,9 +549,8 @@ body.dark-mode .modal-content strong {
 <div class="section-card">
 <h2>⏰ Business Hours</h2>
 <div class="business-hours">
-<div class="hour-item"><span>Monday - Friday</span> <strong>7:00 AM - 6:00 PM</strong></div>
-<div class="hour-item"><span>Saturday</span> <strong>7:00 AM - 5:00 PM</strong></div>
-<div class="hour-item"><span>Sunday</span> <strong>10:00 AM - 3:00 PM</strong></div>
+<div class="hour-item"><span>Monday - Saturday</span> <strong>24/7 Open</strong></div>
+<div class="hour-item"><span>Sunday</span> <strong>8:00 AM - 6:00 PM (Deliveries)</strong></div>
 <div class="hour-item"><span>Public Holidays</span> <strong>CLOSED</strong></div>
 </div>
 </div>
@@ -588,7 +588,7 @@ body.dark-mode .modal-content strong {
 </div>
 
 <div class="product">
-<img src="" alt="Matumbo">
+<img src="matumbo.jpg" alt="Matumbo">
 <h3>🌮 Matumbo</h3>
 <p>260 Ksh/Kg</p>
 </div>
@@ -600,13 +600,13 @@ body.dark-mode .modal-content strong {
 </div>
 
 <div class="product">
-<img src="" alt="Roho">
+<img src="roho.jpg" alt="Roho">
 <h3>💛 Roho</h3>
 <p>800 Ksh/Kg</p>
 </div>
 
 <div class="product">
-<img src="" alt="Minced Meat">
+<img src="beef.jpeg" alt="Minced Meat">
 <h3>🍖 Minced Meat</h3>
 <p>900 Ksh/Kg</p>
 </div>
@@ -614,7 +614,7 @@ body.dark-mode .modal-content strong {
 <div class="product">
 <img src="vichwa.jpeg" alt="Vichwa">
 <h3>🐮 Vichwa</h3>
-<p>500 Ksh/Kg</p>
+<p>at affordable prices</p>
 </div>
 
 </div>
@@ -635,17 +635,28 @@ body.dark-mode .modal-content strong {
 <option value="800">Maini - 800 Ksh/Kg</option>
 <option value="800">Roho - 800 Ksh/Kg</option>
 <option value="900">Minced Meat - 900 Ksh/Kg</option>
-<option value="500">Vichwa za Ngombe - 500 Ksh/Kg</option>
+<option value="">Vichwa za Ngombe - at affordable prices</option>
 </select>
 
 <label for="qty">⚖️ Quantity (Kg):</label>
 <input type="number" id="qty" placeholder="e.g., 2" min="0.1" step="0.1" required>
 
 <label for="location">📍 Location:</label>
-<select id="location" required>
-<option value="embu">Embu Town (+ 100 Ksh delivery)</option>
-<option value="other">Outside Embu</option>
-</select>
+<input type="text" id="location" list="locationList" placeholder="Select or type your location" required>
+<datalist id="locationList">
+<option value="Dallas">
+<option value="Kiambuthi">
+<option value="Majimbo">
+<option value="Town Centre">
+<option value="General Hospital">
+</datalist>
+
+<div id="priceDisplay" style="background: #e8f5e9; padding: 15px; border-radius: 4px; margin: 15px 0; display: none;">
+<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>💰 Price Breakdown:</strong></p>
+<p style="margin: 5px 0; font-size: 14px;">Subtotal: <strong id="displaySubtotal">0</strong> Ksh</p>
+<p style="margin: 5px 0; font-size: 14px;">Delivery Fee: <strong>100</strong> Ksh</p>
+<p style="margin: 5px 0; font-size: 16px; color: darkgreen;"><strong>Total: <span id="displayTotal">0</span> Ksh</strong></p>
+</div>
 
 <button type="button" onclick="showConfirmation(event)">💳 Place Order & Pay</button>
 </form>
@@ -688,12 +699,10 @@ function updateBusinessStatus() {
     let isOpen = true;
     let status = '🟢 Open Now';
     
-    if (day === 0) { // Sunday
-        isOpen = hour >= 10 && hour < 15;
-    } else if (day === 6) { // Saturday
-        isOpen = hour >= 7 && hour < 17;
-    } else { // Mon-Fri
-        isOpen = hour >= 7 && hour < 18;
+    if (day === 0) { // Sunday - Deliveries only 8am to 6pm
+        isOpen = hour >= 8 && hour < 18;
+    } else { // Monday to Saturday - 24/7
+        isOpen = true;
     }
     
     const badge = document.getElementById('statusBadge');
@@ -733,7 +742,7 @@ function showConfirmation(e) {
         return;
     }
     
-    let delivery = location === 'embu' ? 100 : 0;
+    let delivery = location ? 100 : 0;
     let subtotal = price * qty;
     let total = subtotal + delivery;
     
@@ -757,7 +766,7 @@ function showConfirmation(e) {
     document.getElementById('confirmSubtotal').textContent = subtotal;
     document.getElementById('confirmDelivery').textContent = delivery;
     document.getElementById('confirmTotal').textContent = total;
-    document.getElementById('confirmLocation').textContent = location === 'embu' ? 'Embu Town' : 'Outside Embu';
+    document.getElementById('confirmLocation').textContent = location;
     
     document.getElementById('confirmModal').classList.add('show');
 }
@@ -829,22 +838,28 @@ function sendMPesaSTK(phone, amount) {
 
 function startCountdown(minutes) {
     let seconds = minutes * 60;
+    let countdownElement = document.getElementById('countdown');
+    
+    // Display initial time
+    let m = Math.floor(seconds / 60);
+    let s = seconds % 60;
+    let sDisplay = s < 10 ? '0' + s : s;
+    countdownElement.innerHTML = '🚚 Estimated Delivery in: ' + m + 'm ' + sDisplay + 's';
     
     let timer = setInterval(() => {
+        seconds--;
+        
+        if (seconds <= 0) {
+            clearInterval(timer);
+            countdownElement.innerHTML = '✅ Order Delivered!';
+            return;
+        }
+        
         let m = Math.floor(seconds / 60);
         let s = seconds % 60;
         let sDisplay = s < 10 ? '0' + s : s;
         
-        document.getElementById('countdown').innerHTML =
-            '🚚 Estimated Delivery in: ' + m + 'm ' + sDisplay + 's';
-        
-        seconds--;
-        
-        if (seconds < 0) {
-            clearInterval(timer);
-            document.getElementById('countdown').innerHTML =
-                '✅ Order Delivered!';
-        }
+        countdownElement.innerHTML = '🚚 Estimated Delivery in: ' + m + 'm ' + sDisplay + 's';
     }, 1000);
 }
 
@@ -890,6 +905,66 @@ window.onclick = function(event) {
         confirmModal.classList.remove('show');
     }
 }
+
+// Form validation - Enable/Disable Order button based on all fields filled
+function validateFormFields() {
+    let phone = document.getElementById('phone').value.trim();
+    let product = document.getElementById('product').value;
+    let qty = parseFloat(document.getElementById('qty').value) || 0;
+    let location = document.getElementById('location').value;
+    let button = document.querySelector('button[onclick="showConfirmation(event)"]');
+    let priceDisplay = document.getElementById('priceDisplay');
+    
+    // Check if all fields are filled
+    let isValid = phone && product && qty && location && qty > 0;
+    
+    if (isValid) {
+        button.style.opacity = '1';
+        button.style.cursor = 'pointer';
+        button.disabled = false;
+    } else {
+        button.style.opacity = '0.5';
+        button.style.cursor = 'not-allowed';
+        button.disabled = true;
+    }
+    
+    // Calculate and display price
+    if (product && qty > 0) {
+        let productSelect = document.getElementById('product');
+        let price = parseFloat(productSelect.value);
+        
+        if (!isNaN(price) && price > 0) {
+            let subtotal = price * qty;
+            let delivery = 100;
+            let total = subtotal + delivery;
+            
+            document.getElementById('displaySubtotal').textContent = subtotal.toFixed(0);
+            document.getElementById('displayTotal').textContent = total.toFixed(0);
+            priceDisplay.style.display = 'block';
+        } else {
+            priceDisplay.style.display = 'none';
+        }
+    } else {
+        priceDisplay.style.display = 'none';
+    }
+}
+
+// Attach listeners to all form inputs
+document.addEventListener('DOMContentLoaded', function() {
+    let phone = document.getElementById('phone');
+    let product = document.getElementById('product');
+    let qty = document.getElementById('qty');
+    let location = document.getElementById('location');
+    
+    // Initial state
+    validateFormFields();
+    
+    // Listen for changes
+    phone.addEventListener('input', validateFormFields);
+    product.addEventListener('change', validateFormFields);
+    qty.addEventListener('input', validateFormFields);
+    location.addEventListener('change', validateFormFields);
+});
 </script>
 
 </body>
