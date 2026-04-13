@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BENTAM BUTCHERY DELIVERIES</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
 <style>
 * {
@@ -353,6 +355,44 @@ footer a {
     font-weight: bold;
 }
 
+/* Map Styles */
+#map {
+    width: 100%;
+    height: 300px;
+    border-radius: 8px;
+    margin: 15px 0;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.map-button {
+    background: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+    font-size: 14px;
+}
+
+.map-button:hover {
+    background: #45a049;
+}
+
+.location-info {
+    background: #f0f0f0;
+    padding: 10px;
+    border-radius: 4px;
+    margin: 10px 0;
+    font-size: 13px;
+    color: #666;
+}
+
+body.dark-mode .location-info {
+    background: #333;
+    color: #bbb;
+}
+
 /* Mobile specific */
 @media (max-width: 600px) {
     header {
@@ -493,6 +533,7 @@ body.dark-mode .modal-content strong {
 </div>
 <button class="theme-toggle" onclick="toggleDarkMode()" title="Toggle Dark Mode">🌙</button>
 <button class="qr-button" onclick="showQRCode()" title="Share on Mobile">📱</button>
+<button class="qr-button" onclick="goToOrderHistory()" title="My Orders">📋</button>
 </header>
 
 <div class="banner" id="offerBanner">
@@ -535,6 +576,7 @@ body.dark-mode .modal-content strong {
 <p style="font-size: 18px; color: darkred;"><strong>Total: <span id="confirmTotal"></span> Ksh</strong></p>
 <p><strong>Phone:</strong> <span id="confirmPhone"></span></p>
 <p><strong>Location:</strong> <span id="confirmLocation"></span></p>
+<p><strong>📍 GPS Coordinates:</strong> <span id="confirmLat"></span>, <span id="confirmLng"></span></p>
 </div>
 <div class="modal-buttons">
 <button onclick="confirmAndPay()">💳 Confirm & Pay</button>
@@ -542,6 +584,8 @@ body.dark-mode .modal-content strong {
 </div>
 </div>
 </div>
+
+<div id="mainPage">
 
 <div class="container">
 
@@ -650,6 +694,17 @@ body.dark-mode .modal-content strong {
 <option value="General Hospital">
 </datalist>
 
+<button type="button" class="map-button" onclick="toggleMap()">🗺️ Pin Your Location on Map</button>
+<div id="mapContainer" style="display: none;">
+<div id="map"></div>
+<div class="location-info">
+<p><strong>Our Location:</strong> Bentam Butchery, Dallas (Snacks Kona area)</p>
+<p><strong>Your Location:</strong> <span id="customerLat">Not set</span>, <span id="customerLng">Not set</span></p>
+<button type="button" class="map-button" onclick="getCurrentLocation()">📍 Use My Current Location</button>
+<button type="button" class="map-button" style="background: #999;" onclick="toggleMap()">Close Map</button>
+</div>
+</div>
+
 <div id="priceDisplay" style="background: #e8f5e9; padding: 15px; border-radius: 4px; margin: 15px 0; display: none;">
 <p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>💰 Price Breakdown:</strong></p>
 <p style="margin: 5px 0; font-size: 14px;">Subtotal: <strong id="displaySubtotal">0</strong> Ksh</p>
@@ -662,7 +717,29 @@ body.dark-mode .modal-content strong {
 
 <p id="total"></p>
 <p id="countdown"></p>
+</div>
 
+<!-- Admin Dashboard Page -->
+<div id="adminPage" style="display: none; padding: 20px; max-width: 1200px; margin: 0 auto;">
+<h1 style="text-align: center; color: darkred; margin-bottom: 30px;">🔐 Admin Dashboard - Orders</h1>
+<div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+<button onclick="goToHome()" style="background: #999;">🏠 Back to Home</button>
+<button onclick="refreshAdminDashboard()" style="background: #4CAF50;">🔄 Refresh Orders</button>
+<button onclick="clearAllOrders()" style="background: #f44336;">🗑️ Clear All Orders</button>
+</div>
+<div id="adminOrdersList" style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);"></div>
+</div>
+
+<!-- Customer Order History Page -->
+<div id="orderHistoryPage" style="display: none; padding: 20px; max-width: 800px; margin: 0 auto;">
+<h1 style="text-align: center; color: darkred; margin-bottom: 30px;">📋 My Order History</h1>
+<div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+<label for="searchPhone" style="font-weight: bold; display: block; margin-bottom: 10px;">📱 Enter Your Phone Number:</label>
+<input type="tel" id="searchPhone" placeholder="0794612206" style="width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; margin-bottom: 15px; font-size: 16px;">
+<button onclick="searchOrders()" style="width: 100%; background: darkred; color: white; padding: 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">🔍 Search My Orders</button>
+</div>
+<div id="orderHistoryResults" style="margin-top: 20px;"></div>
+<button onclick="goToHome()" style="width: 100%; background: #999; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px; font-weight: bold;">🏠 Back to Home</button>
 </div>
 
 <footer>
@@ -678,6 +755,259 @@ body.dark-mode .modal-content strong {
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
+// Map functionality
+let map;
+let customerMarker;
+let bentamMarker;
+let customerLocation = { lat: null, lng: null };
+
+// Bentam Butchery coordinates (Dallas, Embu)
+const bentamLocation = { lat: -0.3392, lng: 37.4679 };
+
+function toggleMap() {
+    let mapContainer = document.getElementById('mapContainer');
+    mapContainer.style.display = mapContainer.style.display === 'none' ? 'block' : 'none';
+    
+    if (mapContainer.style.display === 'block' && !map) {
+        initializeMap();
+    }
+}
+
+function initializeMap() {
+    if (map) return; // Already initialized
+    
+    // Create map centered on Embu
+    map = L.map('map').setView([bentamLocation.lat, bentamLocation.lng], 15);
+    
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
+    
+    // Add Bentam Butchery marker
+    bentamMarker = L.marker([bentamLocation.lat, bentamLocation.lng], {
+        icon: L.icon({
+            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSI4IiBmaWxsPSIjOEIwMDAwIi8+PHRleHQgeD0iNSIgeT0iMTUiIGZvbnQtc2l6ZT0iMTAiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSJ3aGl0ZSI+QjwvdGV4dD48L3N2Zz4=',
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
+        })
+    }).addTo(map).bindPopup('🥩 <strong>Bentam Butchery</strong><br>Your Delivery Hub');
+    
+    // Click on map to set customer location
+    map.on('click', function(e) {
+        setCustomerLocation(e.latlng.lat, e.latlng.lng);
+    });
+    
+    // Try to get current location
+    getCurrentLocation();
+}
+
+function setCustomerLocation(lat, lng) {
+    customerLocation.lat = lat.toFixed(4);
+    customerLocation.lng = lng.toFixed(4);
+    
+    // Remove old marker if exists
+    if (customerMarker) {
+        map.removeLayer(customerMarker);
+    }
+    
+    // Add new customer marker
+    customerMarker = L.marker([lat, lng], {
+        icon: L.icon({
+            iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSI4IiBmaWxsPSIjNENCRjUwIi8+PHRleHQgeD0iOCIgeT0iMTUiIGZvbnQtc2l6ZT0iMTAiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSJ3aGl0ZSI+WW91PC90ZXh0Pjwvc3ZnPg==',
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
+        })
+    }).addTo(map).bindPopup('📍 <strong>Your Delivery Location</strong>');
+    
+    // Update display
+    document.getElementById('customerLat').textContent = customerLocation.lat;
+    document.getElementById('customerLng').textContent = customerLocation.lng;
+    
+    // Fit map to show both markers
+    map.fitBounds([bentamMarker.getLatLng(), customerMarker.getLatLng()]);
+}
+
+function getCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                setCustomerLocation(position.coords.latitude, position.coords.longitude);
+            },
+            function(error) {
+                console.log('Geolocation error:', error);
+                // Default to center of Embu if geolocation fails
+                setCustomerLocation(bentamLocation.lat, bentamLocation.lng);
+            }
+        );
+    }
+}
+
+// Order Management Functions
+function saveOrder(order) {
+    let orders = getOrders();
+    let orderId = 'ORD-' + Date.now();
+    
+    let newOrder = {
+        id: orderId,
+        timestamp: new Date().toLocaleString(),
+        phone: order.phone,
+        product: order.product,
+        qty: order.qty,
+        price: order.price,
+        subtotal: order.subtotal,
+        delivery: order.delivery,
+        total: order.total,
+        location: order.location,
+        latitude: order.customerLat,
+        longitude: order.customerLng,
+        status: 'Pending Payment',
+        paid: false
+    };
+    
+    orders.push(newOrder);
+    localStorage.setItem('bentamOrders', JSON.stringify(orders));
+    
+    return orderId;
+}
+
+function getOrders() {
+    let orders = localStorage.getItem('bentamOrders');
+    return orders ? JSON.parse(orders) : [];
+}
+
+function getOrdersByPhone(phone) {
+    let orders = getOrders();
+    return orders.filter(order => order.phone === phone);
+}
+
+function markOrderPaid(orderId) {
+    let orders = getOrders();
+    orders = orders.map(order => {
+        if (order.id === orderId) {
+            order.paid = true;
+            order.status = 'Paid - In Delivery';
+        }
+        return order;
+    });
+    localStorage.setItem('bentamOrders', JSON.stringify(orders));
+}
+
+// Page Navigation
+function goToHome() {
+    document.getElementById('mainPage').style.display = 'block';
+    document.getElementById('adminPage').style.display = 'none';
+    document.getElementById('orderHistoryPage').style.display = 'none';
+}
+
+function goToAdmin() {
+    let password = prompt('🔐 Enter Admin Password:');
+    
+    if (password === 'bentam123') {
+        document.getElementById('mainPage').style.display = 'none';
+        document.getElementById('adminPage').style.display = 'block';
+        document.getElementById('orderHistoryPage').style.display = 'none';
+        refreshAdminDashboard();
+    } else if (password !== null) {
+        alert('❌ Incorrect password. Access denied.');
+    }
+}
+
+function goToAdminKeyboard() {
+    goToAdmin();
+}
+
+
+function goToOrderHistory() {
+    document.getElementById('mainPage').style.display = 'none';
+    document.getElementById('adminPage').style.display = 'none';
+    document.getElementById('orderHistoryPage').style.display = 'block';
+    document.getElementById('orderHistoryResults').innerHTML = '';
+}
+
+// Admin Dashboard Functions
+function refreshAdminDashboard() {
+    let orders = getOrders();
+    let adminList = document.getElementById('adminOrdersList');
+    
+    if (orders.length === 0) {
+        adminList.innerHTML = '<p style="text-align: center; color: #999; font-size: 18px;">📭 No orders yet</p>';
+        return;
+    }
+    
+    let html = '<table style="width: 100%; border-collapse: collapse; font-size: 14px;"><tr style="background: #f5f5f5; font-weight: bold;"><td style="padding: 10px; border: 1px solid #ddd;">Order ID</td><td style="padding: 10px; border: 1px solid #ddd;">Customer</td><td style="padding: 10px; border: 1px solid #ddd;">Phone</td><td style="padding: 10px; border: 1px solid #ddd;">Product</td><td style="padding: 10px; border: 1px solid #ddd;">Total</td><td style="padding: 10px; border: 1px solid #ddd;">Status</td><td style="padding: 10px; border: 1px solid #ddd;">Location</td><td style="padding: 10px; border: 1px solid #ddd;">GPS</td><td style="padding: 10px; border: 1px solid #ddd;">Action</td></tr>';
+    
+    orders.forEach(order => {
+        let statusColor = order.paid ? '#4CAF50' : '#ff9800';
+        let statusIcon = order.paid ? '✅' : '⏳';
+        
+        html += '<tr style="border: 1px solid #ddd;"><td style="padding: 10px; border-right: 1px solid #ddd;"><strong>' + order.id + '</strong></td>';
+        html += '<td style="padding: 10px; border-right: 1px solid #ddd;">' + order.phone + '</td>';
+        html += '<td style="padding: 10px; border-right: 1px solid #ddd;"><a href="tel:' + order.phone + '" style="color: darkred; text-decoration: none;">📞 Call</a></td>';
+        html += '<td style="padding: 10px; border-right: 1px solid #ddd;">' + order.product + '</td>';
+        html += '<td style="padding: 10px; border-right: 1px solid #ddd;"><strong>' + order.total + ' Ksh</strong></td>';
+        html += '<td style="padding: 10px; border-right: 1px solid #ddd; color: ' + statusColor + '; font-weight: bold;">' + statusIcon + ' ' + order.status + '</td>';
+        html += '<td style="padding: 10px; border-right: 1px solid #ddd;">' + order.location + '</td>';
+        html += '<td style="padding: 10px; border-right: 1px solid #ddd; font-size: 12px;">' + (order.latitude && order.longitude ? order.latitude + ', ' + order.longitude : 'Not set') + '</td>';
+        html += '<td style="padding: 10px;"><button onclick="markOrderPaid(\'' + order.id + '\'); refreshAdminDashboard();" style="background: #4CAF50; color: white; padding: 5px 10px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px;">Mark Paid</button></td></tr>';
+    });
+    
+    html += '</table>';
+    adminList.innerHTML = html;
+}
+
+function clearAllOrders() {
+    if (confirm('⚠️ Are you sure you want to delete ALL orders? This cannot be undone!')) {
+        localStorage.removeItem('bentamOrders');
+        refreshAdminDashboard();
+        alert('✅ All orders cleared!');
+    }
+}
+
+// Customer Order History Functions
+function searchOrders() {
+    let phone = document.getElementById('searchPhone').value.trim();
+    
+    if (!phone) {
+        alert('Please enter your phone number');
+        return;
+    }
+    
+    let orders = getOrdersByPhone(phone);
+    let resultsDiv = document.getElementById('orderHistoryResults');
+    
+    if (orders.length === 0) {
+        resultsDiv.innerHTML = '<div style="background: #fff3cd; padding: 20px; border-radius: 8px; text-align: center; color: #856404;"><p>📭 No orders found for this phone number</p></div>';
+        return;
+    }
+    
+    let html = '<div style="background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">';
+    
+    orders.forEach(order => {
+        let statusColor = order.paid ? '#4CAF50' : '#ff9800';
+        let statusIcon = order.paid ? '✅ Paid' : '⏳ Pending Payment';
+        
+        html += '<div style="padding: 20px; border-bottom: 1px solid #eee;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">';
+        html += '<div><strong>' + order.id + '</strong><br><small style="color: #999;">' + order.timestamp + '</small></div>';
+        html += '<div style="background: ' + statusColor + '; color: white; padding: 8px 15px; border-radius: 20px; font-weight: bold;">' + statusIcon + '</div>';
+        html += '</div>';
+        
+        html += '<table style="width: 100%; font-size: 14px;"><tr><td style="padding: 5px;">🍖 Product:</td><td style="padding: 5px;"><strong>' + order.product + '</strong></td></tr>';
+        html += '<tr><td style="padding: 5px;">⚖️ Quantity:</td><td style="padding: 5px;"><strong>' + order.qty + ' Kg</strong></td></tr>';
+        html += '<tr><td style="padding: 5px;">💰 Price/Kg:</td><td style="padding: 5px;"><strong>' + order.price + ' Ksh</strong></td></tr>';
+        html += '<tr><td style="padding: 5px;">📊 Subtotal:</td><td style="padding: 5px;"><strong>' + order.subtotal + ' Ksh</strong></td></tr>';
+        html += '<tr><td style="padding: 5px;">🚚 Delivery:</td><td style="padding: 5px;"><strong>' + order.delivery + ' Ksh</strong></td></tr>';
+        html += '<tr style="background: #f9f9f9; font-weight: bold;"><td style="padding: 5px;">💵 Total:</td><td style="padding: 5px; color: darkred;"><strong>' + order.total + ' Ksh</strong></td></tr>';
+        html += '<tr><td style="padding: 5px;">📍 Location:</td><td style="padding: 5px;"><strong>' + order.location + '</strong></td></tr>';
+        html += '<tr><td style="padding: 5px;">🗺️ GPS:</td><td style="padding: 5px;"><small>' + (order.latitude && order.longitude ? order.latitude + ', ' + order.longitude : 'Not set') + '</small></td></tr></table>';
+        html += '</div>';
+    });
+    
+    html += '</div>';
+    resultsDiv.innerHTML = html;
+}
+
 // Dark Mode Toggle
 function toggleDarkMode() {
     document.body.classList.toggle('dark-mode');
@@ -754,7 +1084,9 @@ function showConfirmation(e) {
         location: location,
         delivery: delivery,
         subtotal: subtotal,
-        total: total
+        total: total,
+        customerLat: customerLocation.lat,
+        customerLng: customerLocation.lng
     };
     
     // Show confirmation
@@ -766,6 +1098,8 @@ function showConfirmation(e) {
     document.getElementById('confirmDelivery').textContent = delivery;
     document.getElementById('confirmTotal').textContent = total;
     document.getElementById('confirmLocation').textContent = location;
+    document.getElementById('confirmLat').textContent = customerLocation.lat || 'Not set';
+    document.getElementById('confirmLng').textContent = customerLocation.lng || 'Not set';
     
     document.getElementById('confirmModal').classList.add('show');
 }
@@ -785,17 +1119,21 @@ function placeOrder() {
     let product = orderData.product;
     let qty = orderData.qty;
     
+    // Save order to localStorage and get order ID
+    let orderId = saveOrder(orderData);
+    orderData.id = orderId;
+    
     document.getElementById('total').innerHTML =
-        '<strong>✅ Order Confirmed!</strong><br>Total: ' + total.toFixed(0) + ' Ksh';
+        '<strong>✅ Order Confirmed!</strong><br>Order ID: ' + orderId + '<br>Total: ' + total.toFixed(0) + ' Ksh<br><button onclick="markOrderPaid(\'' + orderId + '\'); alert(\'✅ Payment confirmed!\'); refreshAdminDashboard();" style="background: #4CAF50; color: white; padding: 8px 15px; border: none; border-radius: 4px; margin-top: 10px; cursor: pointer; font-weight: bold;">✅ Confirm Payment (Test)</button>';
     
     // Send M-Pesa STK Push
-    sendMPesaSTK(phone, total);
+    sendMPesaSTK(phone, total, orderId);
     
     startCountdown(30);
 }
 
-function sendMPesaSTK(phone, amount) {
-    alert('Processing payment...\n\nAmount: ' + amount + ' Ksh\nPhone: ' + phone);
+function sendMPesaSTK(phone, amount, orderId) {
+    alert('Processing payment...\n\nAmount: ' + amount + ' Ksh\nPhone: ' + phone + '\nOrder ID: ' + orderId);
     
     // M-Pesa Paybill Details
     const paybill = '247247';
@@ -963,6 +1301,14 @@ document.addEventListener('DOMContentLoaded', function() {
     product.addEventListener('change', validateFormFields);
     qty.addEventListener('input', validateFormFields);
     location.addEventListener('change', validateFormFields);
+    
+    // Keyboard shortcut for admin (Ctrl+Shift+A)
+    document.addEventListener('keydown', function(event) {
+        if (event.ctrlKey && event.shiftKey && event.key === 'A') {
+            event.preventDefault();
+            goToAdmin();
+        }
+    });
 });
 </script>
 
