@@ -695,11 +695,18 @@ body.dark-mode .modal-content strong {
 </datalist>
 
 <button type="button" class="map-button" onclick="toggleMap()">🗺️ Pin Your Location on Map</button>
+<p style="font-size: 13px; color: #999; margin: 8px 0;"><em>💡 Tip: Click the map button to allow location access and pin your exact delivery location on the map</em></p>
 <div id="mapContainer" style="display: none;">
+<div style="background: #e3f2fd; padding: 12px; border-radius: 4px; margin-bottom: 10px; font-size: 14px;">
+<strong>📍 How to pin your location:</strong><br>
+✓ Click "Use My Current Location" to auto-detect from your device<br>
+✓ OR click directly on the map to select your delivery location
+</div>
 <div id="map"></div>
 <div class="location-info">
 <p><strong>Our Location:</strong> Bentam Butchery, Dallas (Snacks Kona area)</p>
 <p><strong>Your Location:</strong> <span id="customerLat">Not set</span>, <span id="customerLng">Not set</span></p>
+<p id="gpsStatus" style="padding: 10px; border-radius: 4px; background: #fff3cd; color: #856404; display: none; margin: 10px 0;"><strong>📍 GPS Status:</strong> <span id="gpsStatusText">Requesting location...</span></p>
 <button type="button" class="map-button" onclick="getCurrentLocation()">📍 Use My Current Location</button>
 <button type="button" class="map-button" style="background: #999;" onclick="toggleMap()">Close Map</button>
 </div>
@@ -742,6 +749,24 @@ body.dark-mode .modal-content strong {
 <button onclick="goToHome()" style="width: 100%; background: #999; color: white; padding: 12px; border: none; border-radius: 4px; cursor: pointer; margin-top: 20px; font-weight: bold;">🏠 Back to Home</button>
 </div>
 
+<!-- Order Confirmation Page (After Placing Order) -->
+<div id="orderConfirmationPage" style="display: none; padding: 20px; max-width: 900px; margin: 0 auto;">
+<div style="background: linear-gradient(135deg, #4CAF50, #45a049); color: white; padding: 30px; border-radius: 12px; text-align: center; margin-bottom: 30px;">
+<h1 style="margin: 0; font-size: 32px;">✅ Order Placed Successfully!</h1>
+<p style="margin: 10px 0 0 0; font-size: 18px;">Your order has been confirmed and is being prepared</p>
+</div>
+
+<div id="orderConfirmationDetails" style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px;"></div>
+
+<div id="allCustomerOrders" style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); margin-bottom: 20px;"></div>
+
+<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+<button onclick="goToHome()" style="flex: 1; background: darkred; color: white; padding: 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">🏠 Back to Home</button>
+<button onclick="downloadOrderReceipt()" style="flex: 1; background: #4CAF50; color: white; padding: 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">📥 Download Receipt</button>
+<button onclick="shareOrderWhatsApp()" style="flex: 1; background: #25D366; color: white; padding: 15px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; font-weight: bold;">💬 Share on WhatsApp</button>
+</div>
+</div>
+
 <footer>
 <p>📍 <strong>Embu, Dallas near Snacks Kona</strong></p>
 <p>🚚 Delivery Fee: 100 Ksh (Embu Town Only)</p>
@@ -770,6 +795,10 @@ function toggleMap() {
     
     if (mapContainer.style.display === 'block' && !map) {
         initializeMap();
+        // Auto-request location when map opens
+        document.getElementById('gpsStatus').style.display = 'block';
+        document.getElementById('gpsStatusText').textContent = 'Requesting location...';
+        getCurrentLocation();
     }
 }
 
@@ -825,8 +854,18 @@ function setCustomerLocation(lat, lng) {
     document.getElementById('customerLat').textContent = customerLocation.lat;
     document.getElementById('customerLng').textContent = customerLocation.lng;
     
+    // Update GPS status
+    document.getElementById('gpsStatus').style.display = 'block';
+    document.getElementById('gpsStatus').style.background = '#d4edda';
+    document.getElementById('gpsStatusText').innerHTML = '✅ <strong>GPS Location Pinned!</strong> Your location: ' + customerLocation.lat + ', ' + customerLocation.lng;
+    
     // Fit map to show both markers
-    map.fitBounds([bentamMarker.getLatLng(), customerMarker.getLatLng()]);
+    if (bentamMarker && customerMarker) {
+        map.fitBounds([bentamMarker.getLatLng(), customerMarker.getLatLng()]);
+    }
+    
+    // Re-validate form to enable place order button
+    validateFormFields();
 }
 
 function getCurrentLocation() {
@@ -837,9 +876,12 @@ function getCurrentLocation() {
             },
             function(error) {
                 console.log('Geolocation error:', error);
+                document.getElementById('gpsStatusText').textContent = '⚠️ Unable to get exact location. Please click on the map to pin your location.';
+                document.getElementById('gpsStatus').style.background = '#fff3cd';
                 // Default to center of Embu if geolocation fails
                 setCustomerLocation(bentamLocation.lat, bentamLocation.lng);
-            }
+            },
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
     }
 }
@@ -899,6 +941,7 @@ function goToHome() {
     document.getElementById('mainPage').style.display = 'block';
     document.getElementById('adminPage').style.display = 'none';
     document.getElementById('orderHistoryPage').style.display = 'none';
+    document.getElementById('orderConfirmationPage').style.display = 'none';
 }
 
 function goToAdmin() {
@@ -908,6 +951,7 @@ function goToAdmin() {
         document.getElementById('mainPage').style.display = 'none';
         document.getElementById('adminPage').style.display = 'block';
         document.getElementById('orderHistoryPage').style.display = 'none';
+        document.getElementById('orderConfirmationPage').style.display = 'none';
         refreshAdminDashboard();
     } else if (password !== null) {
         alert('❌ Incorrect password. Access denied.');
@@ -923,6 +967,7 @@ function goToOrderHistory() {
     document.getElementById('mainPage').style.display = 'none';
     document.getElementById('adminPage').style.display = 'none';
     document.getElementById('orderHistoryPage').style.display = 'block';
+    document.getElementById('orderConfirmationPage').style.display = 'none';
     document.getElementById('orderHistoryResults').innerHTML = '';
 }
 
@@ -1053,6 +1098,12 @@ let orderData = {};
 function showConfirmation(e) {
     e.preventDefault();
     
+    // Check if location is pinned
+    if (!customerLocation.lat || !customerLocation.lng) {
+        alert('❌ Please pin your location on the map first before placing order!\n\nClick on "Pin Your Location on Map" button.');
+        return;
+    }
+    
     let phone = document.getElementById('phone').value;
     let productSelect = document.getElementById('product');
     let price = parseFloat(productSelect.value);
@@ -1123,13 +1174,108 @@ function placeOrder() {
     let orderId = saveOrder(orderData);
     orderData.id = orderId;
     
-    document.getElementById('total').innerHTML =
-        '<strong>✅ Order Confirmed!</strong><br>Order ID: ' + orderId + '<br>Total: ' + total.toFixed(0) + ' Ksh<br><button onclick="markOrderPaid(\'' + orderId + '\'); alert(\'✅ Payment confirmed!\'); refreshAdminDashboard();" style="background: #4CAF50; color: white; padding: 8px 15px; border: none; border-radius: 4px; margin-top: 10px; cursor: pointer; font-weight: bold;">✅ Confirm Payment (Test)</button>';
+    // Show order confirmation page
+    setTimeout(() => {
+        showOrderConfirmation(phone, orderId);
+    }, 1500);
     
     // Send M-Pesa STK Push
     sendMPesaSTK(phone, total, orderId);
+}
+
+function showOrderConfirmation(phone, orderId) {
+    // Get the order details
+    let orders = getOrdersByPhone(phone);
+    let currentOrder = orders.find(o => o.id === orderId);
     
-    startCountdown(30);
+    if (!currentOrder) return;
+    
+    // Calculate expected delivery time
+    let deliveryTime = new Date(Date.now() + 30 * 60000); // 30 minutes from now
+    let arrivalTimeStr = deliveryTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    
+    // Display order details
+    let confirmDiv = document.getElementById('orderConfirmationDetails');
+    let confirmHTML = '<div style="border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 20px;">';
+    confirmHTML += '<h2 style="color: darkred; margin-top: 0;">📦 Order Details</h2>';
+    confirmHTML += '<table style="width: 100%; font-size: 16px;"><tr style="background: #f9f9f9;"><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>Order ID:</strong></td><td style="padding: 12px; border-bottom: 1px solid #ddd; color: darkred; font-weight: bold;">' + currentOrder.id + '</td></tr>';
+    confirmHTML += '<tr><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>📱 Phone:</strong></td><td style="padding: 12px; border-bottom: 1px solid #ddd;">' + currentOrder.phone + '</td></tr>';
+    confirmHTML += '<tr style="background: #f9f9f9;"><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>🍖 Product:</strong></td><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>' + currentOrder.product + '</strong></td></tr>';
+    confirmHTML += '<tr><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>⚖️ Quantity:</strong></td><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>' + currentOrder.qty + ' Kg</strong></td></tr>';
+    confirmHTML += '<tr style="background: #f9f9f9;"><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>💰 Price/Kg:</strong></td><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>' + currentOrder.price + ' Ksh</strong></td></tr>';
+    confirmHTML += '<tr><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>📊 Subtotal:</strong></td><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>' + currentOrder.subtotal + ' Ksh</strong></td></tr>';
+    confirmHTML += '<tr style="background: #f9f9f9;"><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>🚚 Delivery Fee:</strong></td><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>' + currentOrder.delivery + ' Ksh</strong></td></tr>';
+    confirmHTML += '<tr style="background: #fff3cd;"><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>💵 Total Amount:</strong></td><td style="padding: 12px; border-bottom: 1px solid #ddd; font-size: 18px; color: darkred;"><strong>' + currentOrder.total + ' Ksh</strong></td></tr>';
+    confirmHTML += '<tr><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>📍 Delivery Location:</strong></td><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>' + currentOrder.location + '</strong></td></tr>';
+    confirmHTML += '<tr style="background: #f9f9f9;"><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>🗺️ GPS Coordinates:</strong></td><td style="padding: 12px; border-bottom: 1px solid #ddd; font-size: 13px;"><strong>📌 ' + (currentOrder.latitude && currentOrder.longitude ? currentOrder.latitude + ', ' + currentOrder.longitude : 'Not captured') + '</strong></td></tr>';
+    confirmHTML += '<tr style="background: #e8f5e9;"><td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>⏱️ Expected Arrival:</strong></td><td style="padding: 12px; border-bottom: 1px solid #ddd; color: #4CAF50; font-weight: bold; font-size: 18px;">🕒 ' + arrivalTimeStr + '</strong></td></tr>';
+    confirmHTML += '<tr><td style="padding: 12px;"><strong>✅ Status:</strong></td><td style="padding: 12px; color: #4CAF50; font-weight: bold;">Preparing Your Order</td></tr></table>';
+    confirmHTML += '</div>';
+    
+    confirmDiv.innerHTML = confirmHTML;
+    
+    // Show all orders for this customer
+    let allOrdersDiv = document.getElementById('allCustomerOrders');
+    let allOrdersHTML = '<h2 style="color: darkred; margin-top: 0;">📋 All Your Orders</h2>';
+    
+    allOrdersHTML += '<div style="display: grid; gap: 15px;">';
+    orders.forEach(order => {
+        let orderTime = new Date(order.timestamp);
+        let statusIcon = order.paid ? '✅' : '⏳';
+        let statusColor = order.paid ? '#4CAF50' : '#ff9800';
+        let statusText = order.paid ? 'Paid - In Delivery' : 'Pending Payment';
+        
+        allOrdersHTML += '<div style="border: 2px solid ' + statusColor + '; border-radius: 8px; padding: 15px; background: ' + (order.paid ? '#f1f8f6' : '#fff9e6') + ';">';
+        allOrdersHTML += '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">';
+        allOrdersHTML += '<div><strong style="font-size: 16px;">' + order.product + '</strong><br><small style="color: #999;">Order ID: ' + order.id + '</small></div>';
+        allOrdersHTML += '<div style="background: ' + statusColor + '; color: white; padding: 6px 12px; border-radius: 20px; text-align: right;"><strong>' + statusIcon + '</strong><br><small>' + statusText + '</small></div>';
+        allOrdersHTML += '</div>';
+        allOrdersHTML += '<div style="background: white; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 14px;">';
+        allOrdersHTML += '<p style="margin: 5px 0;">⚖️ Qty: <strong>' + order.qty + ' Kg</strong> | 💰 Total: <strong>' + order.total + ' Ksh</strong></p>';
+        allOrdersHTML += '<p style="margin: 5px 0;">📍 Location: <strong>' + order.location + '</strong></p>';
+        allOrdersHTML += '<p style="margin: 5px 0; color: #999; font-size: 12px;">📅 Ordered: ' + orderTime.toLocaleString() + '</p>';
+        allOrdersHTML += '</div>';
+        allOrdersHTML += '</div>';
+    });
+    allOrdersHTML += '</div>';
+    
+    allOrdersDiv.innerHTML = allOrdersHTML;
+    
+    // Switch to confirmation page
+    document.getElementById('mainPage').style.display = 'none';
+    document.getElementById('adminPage').style.display = 'none';
+    document.getElementById('orderHistoryPage').style.display = 'none';
+    document.getElementById('orderConfirmationPage').style.display = 'block';
+}
+
+// Download receipt as text
+function downloadOrderReceipt() {
+    let confirmDiv = document.getElementById('orderConfirmationDetails');
+    let orderText = 'BENTAM BUTCHERY DELIVERIES\n';
+    orderText += '================================\n\n';
+    orderText += confirmDiv.innerText;
+    orderText += '\n\n================================\n';
+    orderText += 'Thank you for your order!\n';
+    orderText += 'Contact: 0794612206\n';
+    
+    let element = document.createElement('a');
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(orderText));
+    element.setAttribute('download', 'bentam-order-receipt.txt');
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+}
+
+// Share order on WhatsApp
+function shareOrderWhatsApp() {
+    let confirmDiv = document.getElementById('orderConfirmationDetails');
+    let message = '🥩 *BENTAM BUTCHERY ORDER CONFIRMATION* 🥩\n\n';
+    message += confirmDiv.innerText.replace(/\t/g, '');
+    message += '\n\n📞 For updates: 0794612206';
+    
+    let encodedMessage = encodeURIComponent(message);
+    window.open('https://wa.me/?text=' + encodedMessage, '_blank');
 }
 
 function sendMPesaSTK(phone, amount, orderId) {
@@ -1252,8 +1398,9 @@ function validateFormFields() {
     let button = document.querySelector('button[onclick="showConfirmation(event)"]');
     let priceDisplay = document.getElementById('priceDisplay');
     
-    // Check if all fields are filled
-    let isValid = phone && product && qty && location && qty > 0;
+    // Check if all fields are filled AND GPS location is captured
+    let gpsStatus = (customerLocation.lat && customerLocation.lng);
+    let isValid = phone && product && qty && location && qty > 0 && gpsStatus;
     
     if (isValid) {
         button.style.opacity = '1';
@@ -1275,8 +1422,17 @@ function validateFormFields() {
             let delivery = 100;
             let total = subtotal + delivery;
             
-            document.getElementById('displaySubtotal').textContent = subtotal.toFixed(0);
-            document.getElementById('displayTotal').textContent = total.toFixed(0);
+            // Build complete price display HTML
+            let gpsText = gpsStatus ? '✅ GPS Location Pinned' : '⚠️ Please pin your location on map';
+            let gpsColor = gpsStatus ? '#4CAF50' : '#ff9800';
+            
+            let priceHTML = '<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>💰 Price Breakdown:</strong></p>';
+            priceHTML += '<p style="margin: 5px 0; font-size: 14px;">Subtotal: <strong>' + subtotal.toFixed(0) + '</strong> Ksh</p>';
+            priceHTML += '<p style="margin: 5px 0; font-size: 14px;">Delivery Fee: <strong>100</strong> Ksh</p>';
+            priceHTML += '<p style="margin: 5px 0; font-size: 16px; color: darkgreen;"><strong>Total: <span>' + total.toFixed(0) + '</span> Ksh</strong></p>';
+            priceHTML += '<p style="margin: 10px 0; padding: 10px; background: ' + gpsColor + '; color: white; border-radius: 4px; text-align: center; font-weight: bold;">' + gpsText + '</p>';
+            
+            priceDisplay.innerHTML = priceHTML;
             priceDisplay.style.display = 'block';
         } else {
             priceDisplay.style.display = 'none';
