@@ -835,10 +835,23 @@ body.dark-mode .modal-content strong {
 let map;
 let customerMarker;
 let bentamMarker;
+let distanceLine; // Store polyline for distance visualization
 let customerLocation = { lat: null, lng: null };
 
 // Bentam Butchery coordinates (Dallas, Embu)
 const bentamLocation = { lat: -0.3392, lng: 37.4679 };
+
+// Calculate distance between two points using Haversine formula (in kilometers)
+function calculateDistance(lat1, lng1, lat2, lng2) {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in kilometers
+}
 
 function toggleMap() {
     let mapContainer = document.getElementById('mapContainer');
@@ -914,16 +927,39 @@ function setCustomerLocation(lat, lng) {
         })
     }).addTo(map).bindPopup('📍 <strong>Your Delivery Location</strong>');
     
+    // Draw blue line between customer and Bentam location
+    // Remove old polyline if it exists
+    if (distanceLine) {
+        map.removeLayer(distanceLine);
+    }
+    
+    // Create polyline (blue line) connecting customer to Bentam
+    distanceLine = L.polyline([
+        [lat, lng],
+        [bentamLocation.lat, bentamLocation.lng]
+    ], {
+        color: 'blue',
+        weight: 3,
+        opacity: 0.7,
+        dashArray: '5, 5', // Dashed line for better visibility
+        lineCap: 'round'
+    }).addTo(map);
+    
+    // Calculate distance
+    const distance = calculateDistance(lat, lng, bentamLocation.lat, bentamLocation.lng);
+    const distanceKm = distance.toFixed(2);
+    const distanceMeters = (distance * 1000).toFixed(0);
+    
+    // Update GPS status with distance information
+    document.getElementById('gpsStatus').style.display = 'block';
+    document.getElementById('gpsStatus').style.background = '#d4edda';
+    document.getElementById('gpsStatusText').innerHTML = '✅ <strong>GPS Location Pinned!</strong><br>Your location: ' + customerLocation.lat + ', ' + customerLocation.lng + '<br>📏 <strong>Distance to Bentam:</strong> ' + distanceKm + ' km (' + distanceMeters + ' m)';
+    
     // Update display
     document.getElementById('customerLat').textContent = customerLocation.lat;
     document.getElementById('customerLng').textContent = customerLocation.lng;
     document.getElementById('pinnedLat').textContent = customerLocation.lat;
     document.getElementById('pinnedLng').textContent = customerLocation.lng;
-    
-    // Update GPS status
-    document.getElementById('gpsStatus').style.display = 'block';
-    document.getElementById('gpsStatus').style.background = '#d4edda';
-    document.getElementById('gpsStatusText').innerHTML = '✅ <strong>GPS Location Pinned!</strong> Your location: ' + customerLocation.lat + ', ' + customerLocation.lng;
     
     // Fit map to show both markers
     if (bentamMarker && customerMarker) {
